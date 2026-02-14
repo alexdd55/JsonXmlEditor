@@ -1,7 +1,7 @@
 <script lang="ts">
   import MonacoEditor from "./lib/MonacoEditor.svelte";
   import { OnFileDrop } from "../wailsjs/runtime/runtime";
-  import { OpenFile } from "../wailsjs/go/main/App";
+  import { FormatContent, OpenFile, ValidateContent } from "../wailsjs/go/main/App";
 
   type Tab = {
     id: string;
@@ -11,10 +11,23 @@
     value: string;
   };
 
+  type Status = {
+    kind: "ok" | "error" | "info";
+    message: string;
+  };
+
+  type ErrorPosition = {
+    line: number;
+    column: number;
+  } | null;
+
   let tabs: Tab[] = [
     { id: crypto.randomUUID(), title: "Untitled.json", lang: "json", value: "{\n  \n}\n" }
   ];
   let activeId = tabs[0].id;
+  let status: Status = { kind: "info", message: "Bereit." };
+  let isProcessing = false;
+  let errorPosition: ErrorPosition = null;
 
   const active = () => tabs.find(t => t.id === activeId)!;
 
@@ -28,6 +41,10 @@
     return "plaintext";
   }
 
+  function supportsActions() {
+    return active().lang === "json" || active().lang === "xml";
+  }
+
   async function openPath(path: string) {
     const res = await OpenFile(path);
     const id = crypto.randomUUID();
@@ -36,6 +53,46 @@
       { id, title: res.filename, path: res.path, lang: guessLang(res.type), value: res.content }
     ];
     activeId = id;
+    status = { kind: "info", message: `${res.filename} geladen.` };
+    errorPosition = null;
+  }
+
+  async function runValidate() {
+    if (!supportsActions() || isProcessing) {
+      return;
+    }
+
+    isProcessing = true;
+    try {
+      const tab = active();
+      const res = await ValidateContent(tab.value, tab.lang);
+      status = { kind: res.ok ? "ok" : "error", message: res.message };
+      errorPosition = !res.ok && res.line ? { line: res.line, column: Math.max(1, res.column || 1) } : null;
+    } finally {
+      isProcessing = false;
+    }
+  }
+
+  async function runFormat() {
+    if (!supportsActions() || isProcessing) {
+      return;
+    }
+
+    isProcessing = true;
+    try {
+      const tab = active();
+      const res = await FormatContent(tab.value, tab.lang);
+      status = { kind: res.ok ? "ok" : "error", message: res.message };
+
+      if (res.ok && res.output !== undefined) {
+        setActiveValue(res.output);
+        errorPosition = null;
+      } else {
+        errorPosition = res.line ? { line: res.line, column: Math.max(1, res.column || 1) } : null;
+      }
+    } finally {
+      isProcessing = false;
+    }
   }
 
   // Drag & Drop initialisieren
@@ -47,6 +104,10 @@
       }
     }
   }, false); // useDropTarget=false: ganzer Window-Bereich
+
+  $: if (activeId) {
+    errorPosition = null;
+  }
 </script>
 
 <style>
@@ -57,12 +118,23 @@
   .tab.active { border: 2px solid #888; }
   .editor { flex: 1; }
   .hint { margin-left: auto; opacity: 0.7; }
+  .status {
+    padding: 8px;
+    margin: 0 8px 8px 8px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    font-size: 0.9rem;
+  }
+  .status.info { background: #f2f3f5; border-color: #e0e2e7; }
+  .status.ok { background: #edf9f0; border-color: #b6e3c1; }
+  .status.error { background: #fdecec; border-color: #f3b6b6; }
+  button:disabled { opacity: 0.6; cursor: not-allowed; }
 </style>
 
 <div class="root">
   <div class="toolbar">
-    <button on:click={() => alert("Format/Validate/Convert kommt als nächster Schritt")}>Format</button>
-    <button on:click={() => alert("Validate kommt als nächster Schritt")}>Validate</button>
+    <button on:click={runFormat} disabled={!supportsActions() || isProcessing}>Format</button>
+    <button on:click={runValidate} disabled={!supportsActions() || isProcessing}>Validate</button>
     <div class="hint">Drag & Drop: *.json / *.xml</div>
   </div>
 
@@ -78,10 +150,13 @@
     {/each}
   </div>
 
+  <div class="status {status.kind}">{status.message}</div>
+
   <div class="editor">
     <MonacoEditor
       value={active().value}
       language={active().lang}
+      errorPosition={errorPosition}
       onChange={setActiveValue}
     />
   </div>
