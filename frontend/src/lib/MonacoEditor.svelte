@@ -96,4 +96,4 @@
   }
 </style>
 
-<div bind:this={el} style="height: 100%; width: 100%;" />
+<div bind:this={el} style="height: 100%; width: 100%;"></div>
