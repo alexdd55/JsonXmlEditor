@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import MonacoEditor from "./lib/MonacoEditor.svelte";
   import { OnFileDrop } from "../wailsjs/runtime/runtime";
   import { FormatContent, OpenFile, ValidateContent } from "../wailsjs/go/main/App";
@@ -21,15 +22,23 @@
     column: number;
   } | null;
 
+  function makeId(): string {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
+    }
+
+    return `tab-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  }
+
   let tabs: Tab[] = [
-    { id: crypto.randomUUID(), title: "Untitled.json", lang: "json", value: "{\n  \n}\n" }
+    { id: makeId(), title: "Untitled.json", lang: "json", value: "{\n  \n}\n" }
   ];
   let activeId = tabs[0].id;
   let status: Status = { kind: "info", message: "Bereit." };
   let isProcessing = false;
   let errorPosition: ErrorPosition = null;
 
-  const active = () => tabs.find(t => t.id === activeId)!;
+  const active = () => tabs.find(t => t.id === activeId) ?? tabs[0];
 
   function setActiveValue(v: string) {
     tabs = tabs.map(t => t.id === activeId ? { ...t, value: v } : t);
@@ -47,7 +56,7 @@
 
   async function openPath(path: string) {
     const res = await OpenFile(path);
-    const id = crypto.randomUUID();
+    const id = makeId();
     tabs = [
       ...tabs,
       { id, title: res.filename, path: res.path, lang: guessLang(res.type), value: res.content }
@@ -95,15 +104,21 @@
     }
   }
 
-  // Drag & Drop initialisieren
-  OnFileDrop(async (_x: number, _y: number, paths: string[]) => {
-    for (const p of paths) {
-      const lower = p.toLowerCase();
-      if (lower.endsWith(".json") || lower.endsWith(".xml")) {
-        await openPath(p);
-      }
+  onMount(() => {
+    try {
+      // Drag & Drop initialisieren
+      OnFileDrop(async (_x: number, _y: number, paths: string[]) => {
+        for (const p of paths) {
+          const lower = p.toLowerCase();
+          if (lower.endsWith(".json") || lower.endsWith(".xml")) {
+            await openPath(p);
+          }
+        }
+      }, false); // useDropTarget=false: ganzer Window-Bereich
+    } catch (error) {
+      status = { kind: "error", message: `Drag & Drop konnte nicht initialisiert werden: ${String(error)}` };
     }
-  }, false); // useDropTarget=false: ganzer Window-Bereich
+  });
 
   $: if (activeId) {
     errorPosition = null;
