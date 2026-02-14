@@ -16,11 +16,18 @@
   onMount(async () => {
     const monacoModule = await import("monaco-editor");
     monaco = monacoModule.default || monacoModule;
-    
-    // Configure worker paths
-    const monacoWorkers = await import('monaco-editor/esm/vs/editor/editor.worker?worker');
+
+    // Configure worker paths per language service.
+    const editorWorker = await import("monaco-editor/esm/vs/editor/editor.worker?worker");
+    const jsonWorker = await import("monaco-editor/esm/vs/language/json/json.worker?worker");
     window.MonacoEnvironment = {
-      getWorker: () => new monacoWorkers.default()
+      getWorker: (_moduleId: string, label: string) => {
+        if (label === "json") {
+          return new jsonWorker.default();
+        }
+
+        return new editorWorker.default();
+      }
     };
 
     editor = monaco.editor.create(el, {
@@ -89,4 +96,4 @@
   }
 </style>
 
-<div bind:this={el} style="height: 100%; width: 100%;" />
+<div bind:this={el} style="height: 100%; width: 100%;"></div>

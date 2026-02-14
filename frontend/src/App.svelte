@@ -129,7 +129,9 @@
   .tabs { display: flex; gap: 6px; padding: 0 8px 8px 8px; flex-wrap: wrap; }
   .tab { padding: 6px 10px; border-radius: 8px; border: 1px solid #ccc; background: white; cursor: pointer; }
   .tab.active { border: 2px solid #888; }
-  .editor { flex: 1; }
+  .sidebyside { display: flex; gap: 8px; flex: 1; padding: 0 8px 8px 8px; }
+  .editor { text-align: left; flex: 1; }
+  .output { text-align: left; flex: 1; }
   .hint { margin-left: auto; opacity: 0.7; }
   .status {
     padding: 8px;
@@ -138,9 +140,9 @@
     border: 1px solid transparent;
     font-size: 0.9rem;
   }
-  .status.info { background: #f2f3f5; border-color: #e0e2e7; }
-  .status.ok { background: #edf9f0; border-color: #b6e3c1; }
-  .status.error { background: #fdecec; border-color: #f3b6b6; }
+  .status.info { color: #e0e2e7; }
+  .status.ok { color: #b6e3c1; }
+  .status.error { color: #f3b6b6; }
   button:disabled { opacity: 0.6; cursor: not-allowed; }
 </style>
 
@@ -163,14 +165,29 @@
     {/each}
   </div>
 
-  <div class="status {status.kind}">{status.message}</div>
-
+  
+  <div class="sidebyside">
   <div class="editor">
     <MonacoEditor
+      id="input"
       value={active().value}
       language={active().lang}
       errorPosition={errorPosition}
       onChange={setActiveValue}
+      formatOnPaste=true
+      formatOnType=true
+      autoIndent="full"
+      automaticLayout=true
     />
   </div>
+  <div class="output">
+    <MonacoEditor
+      id="output"
+      readonly=true
+    />
+  </div>
+  </div>
+  <div class=footer>
+      <div class="status {status.kind}">{status.message}</div>
+    </div>
 </div>
