@@ -14,7 +14,15 @@
   let errorDecorations: string[] = [];
 
   onMount(async () => {
-    monaco = await import("monaco-editor");
+    const monacoModule = await import("monaco-editor");
+    monaco = monacoModule.default || monacoModule;
+    
+    // Configure worker paths
+    const monacoWorkers = await import('monaco-editor/esm/vs/editor/editor.worker?worker');
+    window.MonacoEnvironment = {
+      getWorker: () => new monacoWorkers.default()
+    };
+
     editor = monaco.editor.create(el, {
       value,
       language,

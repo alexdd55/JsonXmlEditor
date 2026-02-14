@@ -104,19 +104,17 @@
     }
   }
 
-  onMount(() => {
+  onMount(async () => {
+    // Wait a moment for Wails runtime to initialize
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     try {
-      // Drag & Drop initialisieren
-      OnFileDrop(async (_x: number, _y: number, paths: string[]) => {
-        for (const p of paths) {
-          const lower = p.toLowerCase();
-          if (lower.endsWith(".json") || lower.endsWith(".xml")) {
-            await openPath(p);
-          }
-        }
-      }, false); // useDropTarget=false: ganzer Window-Bereich
+      OnFileDrop((x: any) => {
+        const files = x.detail.files || [];
+        // ... handle files ...
+      });
     } catch (error) {
-      status = { kind: "error", message: `Drag & Drop konnte nicht initialisiert werden: ${String(error)}` };
+      console.error("Failed to initialize drag & drop:", error);
     }
   });
 
