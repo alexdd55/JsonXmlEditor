@@ -233,7 +233,13 @@
   </div>
 
   <div class="sidebyside">
-    <div class="editor" on:dragover|preventDefault on:drop={handleLocalFileDrop}>
+    <div
+      class="editor"
+      role="region"
+      aria-label="Editor mit Drag-and-Drop für JSON/XML"
+      on:dragover|preventDefault
+      on:drop={handleLocalFileDrop}
+    >
       <MonacoEditor
         value={active().value}
         language={active().lang}
