@@ -731,6 +731,7 @@
     line-height: 1.2;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
     transition: background 0.2s ease, border-color 0.2s ease;
+    cursor: pointer;
   }
 
   .toolbar button:hover:enabled {
@@ -759,24 +760,28 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 7px 12px;
-    border: 1px solid transparent;
+    padding: 5px 15px 7px 10px;
+    border: 3px solid transparent;
+    border-top-color: #4a4a4a;
     border-bottom: 0;
     border-radius: 6px 6px 0 0;
     background: #2d2d2d;
     color: #c7c7c7;
     cursor: pointer;
     max-width: 280px;
+    text-align: left;
   }
 
   .tab:hover {
-    background: #343434;
+    background: #3c3c3c;
+    border-top-color: darkgray;
   }
 
   .tab.active {
     background: #dadada;
     border-color: #3a3a3a;
     color: #1e1e1e;
+    border-top-color: green;
   }
 
   .tab-close {
@@ -790,7 +795,7 @@
     align-items: center;
     justify-content: center;
     padding: 0;
-    font-size: 0.8rem;
+    font-size: 1rem;
     opacity: 0.75;
     cursor: pointer;
   }
@@ -798,6 +803,8 @@
   .tab-close:hover {
     background: rgba(255, 255, 255, 0.15);
     opacity: 1;
+    font-weight: bolder;
+    font-size: larger;
   }
 
   .tab-title {
@@ -810,7 +817,7 @@
   .tab-new {
     border: 1px solid #3a3a3a;
     border-bottom: 0;
-    border-radius: 6px 6px 0 0;
+    border-radius: 6px 6px;
     margin-left: 4px;
     width: 28px;
     height: 30px;
@@ -910,11 +917,22 @@
     color: #f3f4f6;
     border: 1px solid #3f3f46;
     border-radius: 6px;
-    padding: 6px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    line-height: 1.2;
   }
 
   .preferences-dialog button {
     align-self: flex-end;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid #3f3f46;
+    background: linear-gradient(#3c3c3c, #2f2f2f);
+    color: #f3f4f6;
+    font-size: 0.85rem;
+    line-height: 1.2;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    transition: background 0.2s ease, border-color 0.2s ease;
   }
 
   @media (max-width: 980px) {
