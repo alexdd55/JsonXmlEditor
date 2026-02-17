@@ -39,7 +39,7 @@ func main() {
 	logger.Infof("Wails-Anwendung wird gestartet")
 
 	err = wails.Run(&options.App{
-		Title:  "DataQuickForm",
+		Title:  "JsonXmlEditor",
 		Width:  1200,
 		Height: 800,
 		AssetServer: &assetserver.Options{

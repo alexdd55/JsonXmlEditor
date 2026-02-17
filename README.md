@@ -80,8 +80,8 @@ go test ./...
 
 By default, the application writes logs to:
 
-- `~/.dataquickformlog/application.log`
-- `~/.dataquickformlog/crash.log`
+- `~/.JsonXmlEditor_logs/application.log`
+- `~/.JsonXmlEditor_logs/crash.log`
 
 ## License
 

@@ -111,8 +111,8 @@ func (a *App) ShowAboutDialog() {
 	a.logger.Debugf("ShowAboutDialog aufgerufen")
 	_, _ = runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
 		Type:    runtime.InfoDialog,
-		Title:   "About DataQuickForm",
-		Message: "DataQuickForm\nA fast JSON/XML editor with formatting and validation.",
+		Title:   "About",
+		Message: "JsonXmlEditor\nA fast JSON/XML editor with formatting and validation.",
 	})
 }
 

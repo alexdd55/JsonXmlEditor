@@ -29,7 +29,7 @@ func TestWriteBootstrapCrashLogCreatesFile(t *testing.T) {
 	msg := "bootstrap test crash"
 	writeBootstrapCrashLog(msg)
 
-	crashPath := filepath.Join(tempHome, ".dataquickformlog", "crash.log")
+	crashPath := filepath.Join(tempHome, ".JsonXmlEditor_logs", "crash.log")
 	content, err := os.ReadFile(crashPath)
 	if err != nil {
 		t.Fatalf("failed to read crash log: %v", err)
@@ -55,7 +55,7 @@ func TestNewAppLoggerWritesApplicationAndCrashLogs(t *testing.T) {
 	logger.LogCrashError(os.ErrInvalid)
 	logger.Close()
 
-	appLogPath := filepath.Join(tempHome, ".dataquickformlog", "application.log")
+	appLogPath := filepath.Join(tempHome, ".JsonXmlEditor_logs", "application.log")
 	appContent, err := os.ReadFile(appLogPath)
 	if err != nil {
 		t.Fatalf("failed to read application log: %v", err)
@@ -67,7 +67,7 @@ func TestNewAppLoggerWritesApplicationAndCrashLogs(t *testing.T) {
 		}
 	}
 
-	crashLogPath := filepath.Join(tempHome, ".dataquickformlog", "crash.log")
+	crashLogPath := filepath.Join(tempHome, ".JsonXmlEditor_logs", "crash.log")
 	crashContent, err := os.ReadFile(crashLogPath)
 	if err != nil {
 		t.Fatalf("failed to read crash log: %v", err)

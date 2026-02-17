@@ -25,7 +25,7 @@ func newAppLogger() (*AppLogger, error) {
 		return nil, fmt.Errorf("home directory konnte nicht bestimmt werden: %w", err)
 	}
 
-	logDir := filepath.Join(home, ".dataquickformlog")
+	logDir := filepath.Join(home, ".JsonXmlEditor_logs")
 	if err := os.MkdirAll(logDir, 0o755); err != nil {
 		return nil, fmt.Errorf("log-verzeichnis konnte nicht erstellt werden: %w", err)
 	}
@@ -78,7 +78,7 @@ func writeBootstrapCrashLog(message string) {
 		return
 	}
 
-	logDir := filepath.Join(home, ".dataquickformlog")
+	logDir := filepath.Join(home, ".JsonXmlEditor_logs")
 	if err := os.MkdirAll(logDir, 0o755); err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "%s [CRASH] %s (zusätzlich konnte das Log-Verzeichnis nicht erstellt werden: %v)\n", time.Now().Format(time.RFC3339), message, err)
 		return
