@@ -834,81 +834,157 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
-    background: #1e1e1e;
-    color: #d4d4d4;
+    background:
+      radial-gradient(circle at 8% -10%, rgba(126, 169, 255, 0.38), transparent 45%),
+      radial-gradient(circle at 100% 0, rgba(255, 177, 199, 0.33), transparent 38%),
+      linear-gradient(180deg, #f2f4f8 0%, #dce1e8 100%);
+    color: #1b1f26;
+    font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    padding: 16px;
+    box-sizing: border-box;
+  }
+
+  .window-shell {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow:
+      0 22px 40px rgba(21, 41, 68, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(14px);
+    background: rgba(243, 245, 249, 0.78);
+  }
+
+  .window-titlebar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    background: linear-gradient(180deg, rgba(253, 253, 255, 0.93), rgba(229, 232, 238, 0.9));
+    border-bottom: 1px solid rgba(159, 171, 189, 0.5);
+  }
+
+  .window-controls {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .traffic-light {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    box-shadow: inset 0 -1px 1px rgba(0, 0, 0, 0.25);
+  }
+
+  .traffic-light.red { background: #ff5f57; }
+  .traffic-light.yellow { background: #ffbd2f; }
+  .traffic-light.green { background: #28c840; }
+
+  .window-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: rgba(32, 36, 44, 0.75);
+    letter-spacing: 0.01em;
   }
 
   .toolbar {
-    padding: 10px 12px;
+    padding: 12px;
     display: flex;
     gap: 8px;
     align-items: center;
     flex-wrap: wrap;
-    border-bottom: 1px solid #2d2d2d;
-    background: #252526;
+    border-bottom: 1px solid rgba(189, 198, 213, 0.7);
+    background: rgba(247, 249, 252, 0.76);
   }
 
   .toolbar button {
-    padding: 6px 12px;
-    border-radius: 6px;
-    border: 1px solid #3f3f46;
-    background: linear-gradient(#3c3c3c, #2f2f2f);
-    color: #f3f4f6;
+    padding: 7px 14px;
+    border-radius: 999px;
+    border: 1px solid #c2cad8;
+    background: linear-gradient(180deg, #ffffff 0%, #eef1f6 100%);
+    color: #232a36;
     font-size: 0.85rem;
+    font-weight: 500;
     line-height: 1.2;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-    transition: background 0.2s ease, border-color 0.2s ease;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.85),
+      0 1px 2px rgba(40, 52, 70, 0.12);
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
     cursor: pointer;
   }
 
+
+  .button-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 6px;
+    font-size: 0.95em;
+    line-height: 1;
+  }
+
   .toolbar button:hover:enabled {
-    background: linear-gradient(#4a4a4a, #373737);
-    border-color: #575757;
+    background: linear-gradient(180deg, #ffffff 0%, #e6ecf5 100%);
+    border-color: #aeb8cb;
   }
 
   .toolbar button:active:enabled {
-    background: linear-gradient(#2b2b2b, #242424);
+    transform: translateY(1px);
+    background: linear-gradient(180deg, #e5ebf5 0%, #f8faff 100%);
   }
-  
-  .margin-view-overlay {
-    background-color: #dadada;
+
+  .toolbar button[aria-label] {
+    min-width: 40px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .toolbar button[aria-label] .button-icon {
+    margin-right: 0;
+    font-size: 1.1rem;
   }
 
   .tabs {
     display: flex;
-    gap: 1px;
-    padding: 0 8px;
+    gap: 6px;
+    padding: 8px 10px 0;
     flex-wrap: wrap;
-    background: #252526;
-    border-bottom: 0px solid #333;
+    background: rgba(243, 246, 251, 0.7);
+    border-bottom: 1px solid rgba(189, 198, 213, 0.55);
   }
 
   .tab {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 5px 15px 7px 10px;
-    border: 3px solid transparent;
-    border-top-color: #4a4a4a;
+    padding: 6px 14px 8px 10px;
+    border: 1px solid #ccd3e1;
     border-bottom: 0;
-    border-radius: 6px 6px 0 0;
-    background: #2d2d2d;
-    color: #c7c7c7;
+    border-radius: 10px 10px 0 0;
+    background: linear-gradient(180deg, #edf1f7 0%, #dde4ee 100%);
+    color: #4d5665;
     cursor: pointer;
     max-width: 280px;
     text-align: left;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
   }
 
   .tab:hover {
-    background: #3c3c3c;
-    border-top-color: darkgray;
+    background: linear-gradient(180deg, #f7faff 0%, #e8edf6 100%);
   }
 
   .tab.active {
-    background: #dadada;
-    border-color: #3a3a3a;
-    color: #1e1e1e;
-    border-top-color: green;
+    background: linear-gradient(180deg, #ffffff 0%, #f7f9fc 100%);
+    border-color: #bcc8dc;
+    color: #1e2633;
+    box-shadow:
+      0 -1px 0 rgba(255, 255, 255, 0.85),
+      inset 0 2px 0 rgba(84, 115, 171, 0.18);
   }
 
   .tab-close {
@@ -928,7 +1004,7 @@
   }
 
   .tab-close:hover {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(43, 58, 84, 0.12);
     opacity: 1;
     font-weight: bolder;
     font-size: larger;
@@ -942,14 +1018,14 @@
 
 
   .tab-new {
-    border: 1px solid #3a3a3a;
+    border: 1px solid #bcc8dc;
     border-bottom: 0;
-    border-radius: 6px 6px;
+    border-radius: 10px 10px 0 0;
     margin-left: 4px;
     width: 28px;
     height: 30px;
-    background: #2d2d2d;
-    color: #c7c7c7;
+    background: linear-gradient(180deg, #edf1f7 0%, #dde4ee 100%);
+    color: #4f5868;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -958,27 +1034,28 @@
   }
 
   .tab-new:hover {
-    background: #3a3a3a;
-    color: #fff;
+    background: linear-gradient(180deg, #ffffff 0%, #e8eef8 100%);
+    color: #1f2632;
   }
 
   .sidebyside {
     display: flex;
     gap: 8px;
     flex: 1;
-    padding: 8px;
+    padding: 10px;
     min-height: 0;
-    background: #dadada;
+    background: rgba(238, 242, 248, 0.76);
   }
 
   .editor {
     text-align: left;
     flex: 1;
-    border: 0px solid #333;
-    border-radius: 6px;
+    border: 1px solid #c5cfdf;
+    border-radius: 12px;
     min-width: 0;
     min-height: 0;
     overflow: hidden;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
   }
 
   .output {
@@ -986,20 +1063,22 @@
     flex: 1;
     min-width: 0;
     min-height: 0;
-    border: 0px solid #333;
-    border-radius: 6px;
+    border: 1px solid #c5cfdf;
+    border-radius: 12px;
     overflow: hidden;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
   }
 
   .hint {
     margin-left: auto;
-    opacity: 0.8;
+    opacity: 0.72;
     font-size: 0.85rem;
+    color: #4b5567;
   }
 
   .footer {
-    border-top: 1px solid #dadada;
-    background: #252526;
+    border-top: 1px solid rgba(192, 202, 217, 0.8);
+    background: rgba(245, 247, 252, 0.82);
   }
 
   .status {
@@ -1007,15 +1086,15 @@
     font-size: 0.85rem;
   }
 
-  .status.info { color: #eaf5ff; }
-  .status.ok { color: #d9ffdf; }
-  .status.error { color: #ffe2e2; }
+  .status.info { color: #35537e; }
+  .status.ok { color: #1f6b35; }
+  .status.error { color: #9f2432; }
   button:disabled { opacity: 0.6; cursor: not-allowed; }
 
   .preferences-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.45);
+    background: rgba(19, 27, 38, 0.35);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1023,10 +1102,10 @@
   }
 
   .preferences-dialog {
-    background: #252526;
-    color: #f3f4f6;
-    border: 1px solid #3f3f46;
-    border-radius: 8px;
+    background: rgba(248, 250, 254, 0.95);
+    color: #1f2430;
+    border: 1px solid #c5cfdf;
+    border-radius: 12px;
     width: min(360px, calc(100vw - 32px));
     padding: 16px;
     display: flex;
@@ -1040,9 +1119,9 @@
   }
 
   .preferences-dialog select {
-    background: #2d2d2d;
-    color: #f3f4f6;
-    border: 1px solid #3f3f46;
+    background: #ffffff;
+    color: #1f2430;
+    border: 1px solid #bdc8da;
     border-radius: 6px;
     padding: 6px 12px;
     font-size: 0.85rem;
@@ -1052,10 +1131,10 @@
   .preferences-dialog button {
     align-self: flex-end;
     padding: 6px 12px;
-    border-radius: 6px;
-    border: 1px solid #3f3f46;
-    background: linear-gradient(#3c3c3c, #2f2f2f);
-    color: #f3f4f6;
+    border-radius: 999px;
+    border: 1px solid #bdc8da;
+    background: linear-gradient(180deg, #ffffff 0%, #edf2fa 100%);
+    color: #1f2430;
     font-size: 0.85rem;
     line-height: 1.2;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
@@ -1075,75 +1154,87 @@
 </style>
 
 <div class="root">
-  <div class="toolbar">
-    <button on:click={runFormat} disabled={!supportsActions() || isProcessing}>{t("actionFormatApply")}</button>
-    <button on:click={runValidate} disabled={!supportsActions() || isProcessing}>{t("actionValidate")}</button>
-    <button on:click={undoActiveTab} disabled={!canUndoActive() || isProcessing}>{t("actionUndo")}</button>
-    <button on:click={redoActiveTab} disabled={!canRedoActive() || isProcessing}>{t("actionRedo")}</button>
-    <button on:click={clearActiveTab} disabled={!active().value}>{t("actionClearEditor")}</button>
-    <button on:click={runCompress} disabled={!outputValue || isProcessing}>{t("actionCompressOutput")}</button>
-    <button on:click={copyOutputToEditor} disabled={!outputValue}>{t("actionOutputToEditor")}</button>
-    <button on:click={copyOutputToClipboard} disabled={!outputValue}>{t("actionCopyOutput")}</button>
-    <div class="hint">{t("dragAndDropHint")}</div>
-  </div>
-
-  <div class="tabs" role="tablist" aria-label={t("openedFiles")}>
-    {#each tabs as tab (tab.id)}
-      <div
-        class="tab {tab.id === activeId ? 'active' : ''}"
-        title={tab.path ?? ""}
-        role="tab"
-        aria-selected={tab.id === activeId}
-        tabindex="0"
-        on:click={() => (activeId = tab.id)}
-        on:keydown={(event) => (event.key === "Enter" || event.key === " ") && (activeId = tab.id)}
-      >
-        <button
-          class="tab-close"
-          type="button"
-          aria-label={t("closeTabLabel", { name: tab.title })}
-          on:click|stopPropagation={() => closeTab(tab.id)}
-        >
-          ×
-        </button>
-        <span class="tab-title">{tab.title}{tab.dirty ? " *" : ""}</span>
+  <div class="window-shell">
+    <div class="window-titlebar">
+      <div class="window-controls" aria-hidden="true">
+        <span class="traffic-light red"></span>
+        <span class="traffic-light yellow"></span>
+        <span class="traffic-light green"></span>
       </div>
-    {/each}
-    <button
-      class="tab-new"
-      type="button"
-      on:click={createTabRightOfActive}
-      aria-label={t("newTabAria")}
-      title={t("newTabTitle")}
-    >
-      +
-    </button>
-  </div>
+      <div class="window-title">JSON XML Editor</div>
+      <div style="width: 52px;"></div>
+    </div>
 
-  <div class="sidebyside">
-    <div
-      class="editor"
-      role="region"
-      aria-label={t("editorRegionLabel")}
-    >
-      <MonacoEditor
-        value={active().value}
-        language={active().lang}
-        errorPosition={errorPosition}
-        onChange={setActiveValue}
-        onDropFile={handleLocalFileDrop}
-      />
+    <div class="toolbar">
+      <button on:click={runFormat} disabled={!supportsActions() || isProcessing}><span class="button-icon" aria-hidden="true">✨</span>{t("actionFormatApply")}</button>
+      <button on:click={runValidate} disabled={!supportsActions() || isProcessing}><span class="button-icon" aria-hidden="true">✅</span>{t("actionValidate")}</button>
+      <button on:click={undoActiveTab} disabled={!canUndoActive() || isProcessing} aria-label={t("actionUndo")} title={t("actionUndo")}><span class="button-icon" aria-hidden="true">↶</span></button>
+      <button on:click={redoActiveTab} disabled={!canRedoActive() || isProcessing} aria-label={t("actionRedo")} title={t("actionRedo")}><span class="button-icon" aria-hidden="true">↷</span></button>
+      <button on:click={clearActiveTab} disabled={!active().value}><span class="button-icon" aria-hidden="true">🧹</span>{t("actionClearEditor")}</button>
+      <button on:click={runCompress} disabled={!outputValue || isProcessing}><span class="button-icon" aria-hidden="true">🗜</span>{t("actionCompressOutput")}</button>
+      <button on:click={copyOutputToEditor} disabled={!outputValue}><span class="button-icon" aria-hidden="true">⤴</span>{t("actionOutputToEditor")}</button>
+      <button on:click={copyOutputToClipboard} disabled={!outputValue}><span class="button-icon" aria-hidden="true">📋</span>{t("actionCopyOutput")}</button>
+      <div class="hint">{t("dragAndDropHint")}</div>
     </div>
-    <div class="output">
-      <MonacoEditor
-        value={outputValue}
-        language={active().lang}
-        readonly={true}
-      />
+
+    <div class="tabs" role="tablist" aria-label={t("openedFiles")}>
+      {#each tabs as tab (tab.id)}
+        <div
+          class="tab {tab.id === activeId ? 'active' : ''}"
+          title={tab.path ?? ""}
+          role="tab"
+          aria-selected={tab.id === activeId}
+          tabindex="0"
+          on:click={() => (activeId = tab.id)}
+          on:keydown={(event) => (event.key === "Enter" || event.key === " ") && (activeId = tab.id)}
+        >
+          <button
+            class="tab-close"
+            type="button"
+            aria-label={t("closeTabLabel", { name: tab.title })}
+            on:click|stopPropagation={() => closeTab(tab.id)}
+          >
+            <span aria-hidden="true">✕</span>
+          </button>
+          <span class="tab-title">{tab.title}{tab.dirty ? " *" : ""}</span>
+        </div>
+      {/each}
+      <button
+        class="tab-new"
+        type="button"
+        on:click={createTabRightOfActive}
+        aria-label={t("newTabAria")}
+        title={t("newTabTitle")}
+      >
+        <span aria-hidden="true">＋</span>
+      </button>
     </div>
-  </div>
-  <div class="footer">
-    <div class="status {status.kind}">{status.message}</div>
+
+    <div class="sidebyside">
+      <div
+        class="editor"
+        role="region"
+        aria-label={t("editorRegionLabel")}
+      >
+        <MonacoEditor
+          value={active().value}
+          language={active().lang}
+          errorPosition={errorPosition}
+          onChange={setActiveValue}
+          onDropFile={handleLocalFileDrop}
+        />
+      </div>
+      <div class="output">
+        <MonacoEditor
+          value={outputValue}
+          language={active().lang}
+          readonly={true}
+        />
+      </div>
+    </div>
+    <div class="footer">
+      <div class="status {status.kind}">{status.message}</div>
+    </div>
   </div>
 </div>
 
@@ -1161,7 +1252,7 @@
           <option value={code}>{label}</option>
         {/each}
       </select>
-      <button type="button" on:click={() => (preferencesOpen = false)}>{t("close")}</button>
+      <button type="button" on:click={() => (preferencesOpen = false)}><span class="button-icon" aria-hidden="true">✕</span>{t("close")}</button>
     </div>
   </div>
 {/if}
