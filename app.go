@@ -257,12 +257,6 @@ func formatXML(content string) (string, error) {
 			return "", err
 		}
 
-		if charData, ok := tok.(xml.CharData); ok {
-			if len(bytes.TrimSpace(charData)) == 0 {
-				continue
-			}
-		}
-
 		if err := encoder.EncodeToken(tok); err != nil {
 			return "", err
 		}

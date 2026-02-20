@@ -979,6 +979,7 @@
         const helper = document.createElement("textarea");
         helper.value = outputValue;
         helper.setAttribute("readonly", "true");
+        helper.setAttribute("name", "h");
         helper.style.position = "fixed";
         helper.style.opacity = "0";
         document.body.appendChild(helper);
@@ -1037,8 +1038,8 @@
         sourceEditorId: tab.id,
         title: t("diffTabTitle", { name: tab.title }),
         lang: tab.lang,
-        originalValue: comparisonValue,
-        value: clipboardValue
+        originalValue:  clipboardValue,
+        value: comparisonValue
       };
 
       const activeIndex = tabs.findIndex((item) => item.id === activeId);
@@ -1237,8 +1238,8 @@
   }
 
   .root.theme-dark .tab-new {
-    border-color: #4f607f;
-    background: linear-gradient(180deg, #2d3a50 0%, #253245 100%);
+    border-color: transparent;
+    background: transparent;
     color: #c8d2e4;
   }
 
@@ -1408,13 +1409,12 @@
 
 
   .tab-new {
-    border: 1px solid #bcc8dc;
+    background-color: transparent;
     border-bottom: 0;
-    border-radius: 10px 10px 0 0;
+    border-radius: 10px;
     margin-left: 4px;
     width: 28px;
-    height: 30px;
-    background: linear-gradient(180deg, #edf1f7 0%, #dde4ee 100%);
+    height: 33px;
     color: #4f5868;
     display: inline-flex;
     align-items: center;
@@ -1457,6 +1457,7 @@
     border-radius: 12px;
     overflow: hidden;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+    background-color: grey;
   }
 
   .diff-only {
