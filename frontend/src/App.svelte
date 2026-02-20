@@ -144,6 +144,34 @@
       pt: "Falha ao copiar: {error}",
       fr: "Échec de la copie : {error}"
     },
+    clipboardUnavailable: {
+      en: "Clipboard read is not available.",
+      de: "Zwischenablage kann nicht gelesen werden.",
+      es: "La lectura del portapapeles no está disponible.",
+      pt: "A leitura da área de transferência não está disponível.",
+      fr: "La lecture du presse-papiers n'est pas disponible."
+    },
+    clipboardReadFailed: {
+      en: "Reading clipboard failed: {error}",
+      de: "Lesen der Zwischenablage fehlgeschlagen: {error}",
+      es: "Error al leer el portapapeles: {error}",
+      pt: "Falha ao ler a área de transferência: {error}",
+      fr: "Échec de la lecture du presse-papiers : {error}"
+    },
+    diffTabTitle: {
+      en: "Diff: {name} ↔ Clipboard",
+      de: "Diff: {name} ↔ Zwischenablage",
+      es: "Diff: {name} ↔ Portapapeles",
+      pt: "Diff: {name} ↔ Área de transferência",
+      fr: "Diff : {name} ↔ Presse-papiers"
+    },
+    diffCreated: {
+      en: "Clipboard diff opened.",
+      de: "Zwischenablage-Diff geöffnet.",
+      es: "Diferencia con portapapeles abierta.",
+      pt: "Diff da área de transferência aberto.",
+      fr: "Diff du presse-papiers ouvert."
+    },
     dropOnlyJsonXml: {
       en: "Please drop only JSON or XML files.",
       de: "Bitte nur JSON- oder XML-Dateien ablegen.",
@@ -192,6 +220,13 @@
       es: "Copiar salida",
       pt: "Copiar saída",
       fr: "Copier la sortie"
+    },
+    actionCompareClipboard: {
+      en: "Compare with clipboard",
+      de: "Mit Zwischenablage vergleichen",
+      es: "Comparar con portapapeles",
+      pt: "Comparar com a área de transferência",
+      fr: "Comparer avec le presse-papiers"
     },
     actionUndo: {
       en: "Undo",
@@ -317,16 +352,28 @@
     status = { kind: "info", message: t("languageUpdated", { language: localeNames[nextLocale] }) };
   }
 
-  type Tab = {
+  type BaseTab = {
     id: string;
     title: string;
-    path?: string;
     lang: "json" | "xml" | "plaintext";
+  };
+
+  type EditorTab = BaseTab & {
+    kind: "editor";
+    path?: string;
     value: string;
     dirty: boolean;
     undoHistory: string[];
     redoHistory: string[];
   };
+
+  type DiffTab = BaseTab & {
+    kind: "diff";
+    originalValue: string;
+    value: string;
+  };
+
+  type Tab = EditorTab | DiffTab;
 
   type Status = {
     kind: "ok" | "error" | "info";
@@ -349,6 +396,7 @@
   function createUntitledTab(): Tab {
     return {
       id: makeId(),
+      kind: "editor",
       title: t("untitled"),
       lang: "json",
       value: "{\n  \n}\n",
@@ -367,6 +415,10 @@
   let processingToken = 0;
 
   const active = () => tabs.find((t) => t.id === activeId) ?? tabs[0];
+  const activeEditor = (): EditorTab | null => {
+    const tab = active();
+    return tab.kind === "editor" ? tab : null;
+  };
 
   function setActiveValue(v: string, options: { recordUndo?: boolean } = {}) {
     const { recordUndo = true } = options;
@@ -376,6 +428,10 @@
     }
 
     const current = tabs[index];
+    if (current.kind !== "editor") {
+      return;
+    }
+
     if (current.value === v) {
       return;
     }
@@ -393,15 +449,38 @@
     ];
   }
 
-  function setActiveTab(tab: Partial<Tab>) {
+  function setActiveDiffValue(v: string) {
     const index = tabs.findIndex((t) => t.id === activeId);
     if (index === -1) {
       return;
     }
 
+    const current = tabs[index];
+    if (current.kind !== "diff" || current.value === v) {
+      return;
+    }
+
     tabs = [
       ...tabs.slice(0, index),
-      { ...tabs[index], ...tab },
+      { ...current, value: v },
+      ...tabs.slice(index + 1)
+    ];
+  }
+
+  function setActiveTab(tab: Partial<EditorTab>) {
+    const index = tabs.findIndex((t) => t.id === activeId);
+    if (index === -1) {
+      return;
+    }
+
+    const current = tabs[index];
+    if (current.kind !== "editor") {
+      return;
+    }
+
+    tabs = [
+      ...tabs.slice(0, index),
+      { ...current, ...tab },
       ...tabs.slice(index + 1)
     ];
   }
@@ -466,6 +545,7 @@
       ...tabs,
       {
         id,
+        kind: "editor",
         title: res.filename,
         path: res.path,
         lang: guessLang(res.type),
@@ -482,7 +562,11 @@
   }
 
   async function saveActiveFile() {
-    const tab = active();
+    const tab = activeEditor();
+    if (!tab) {
+      return;
+    }
+
     if (!tab.path) {
       await saveActiveFileAs();
       return;
@@ -499,7 +583,10 @@
   }
 
   async function saveActiveFileAs() {
-    const tab = active();
+    const tab = activeEditor();
+    if (!tab) {
+      return;
+    }
     const savedPath = await SaveFileAs(tab.title, tab.value);
     if (!savedPath) {
       status = { kind: "info", message: t("saveAsCanceled") };
@@ -536,7 +623,8 @@
   }
 
   function supportsActions() {
-    return active().lang === "json" || active().lang === "xml";
+    const tab = activeEditor();
+    return !!tab && (tab.lang === "json" || tab.lang === "xml");
   }
 
   async function openPath(path: string) {
@@ -546,6 +634,7 @@
       ...tabs,
       {
         id,
+        kind: "editor",
         title: res.filename,
         path: res.path,
         lang: guessLang(res.type),
@@ -562,7 +651,10 @@
   }
 
   async function runValidate() {
-    const tab = active();
+    const tab = activeEditor();
+    if (!tab) {
+      return;
+    }
     const currentToken = ++processingToken;
 
     if (!(tab.lang === "json" || tab.lang === "xml")) {
@@ -595,7 +687,10 @@
   }
 
   async function runFormat() {
-    const tab = active();
+    const tab = activeEditor();
+    if (!tab) {
+      return;
+    }
     const currentToken = ++processingToken;
 
     if (!(tab.lang === "json" || tab.lang === "xml")) {
@@ -641,7 +736,8 @@
   }
 
   function copyOutputToEditor() {
-    if (!outputValue) {
+    const tab = activeEditor();
+    if (!outputValue || !tab) {
       return;
     }
 
@@ -649,11 +745,13 @@
   }
 
   function canUndoActive(): boolean {
-    return active().undoHistory.length > 0;
+    const tab = activeEditor();
+    return !!tab && tab.undoHistory.length > 0;
   }
 
   function canRedoActive(): boolean {
-    return active().redoHistory.length > 0;
+    const tab = activeEditor();
+    return !!tab && tab.redoHistory.length > 0;
   }
 
   function undoActiveTab() {
@@ -663,6 +761,9 @@
     }
 
     const current = tabs[index];
+    if (current.kind !== "editor") {
+      return;
+    }
     if (current.undoHistory.length === 0) {
       return;
     }
@@ -688,6 +789,9 @@
     }
 
     const current = tabs[index];
+    if (current.kind !== "editor") {
+      return;
+    }
     if (current.redoHistory.length === 0) {
       return;
     }
@@ -707,6 +811,10 @@
   }
 
   function clearActiveTab() {
+    if (!activeEditor()) {
+      return;
+    }
+
     setActiveValue("");
     errorPosition = null;
   }
@@ -770,6 +878,45 @@
       status = { kind: "ok", message: t("outputCopied") };
     } catch (error) {
       status = { kind: "error", message: t("copyFailed", { error: (error as Error).message }) };
+    }
+  }
+
+
+  async function compareWithClipboard() {
+    const tab = activeEditor();
+    if (!tab) {
+      return;
+    }
+
+    if (!navigator.clipboard?.readText) {
+      status = { kind: "error", message: t("clipboardUnavailable") };
+      return;
+    }
+
+    try {
+      const clipboardValue = await navigator.clipboard.readText();
+      const id = makeId();
+      const diffTab: DiffTab = {
+        id,
+        kind: "diff",
+        title: t("diffTabTitle", { name: tab.title }),
+        lang: tab.lang,
+        originalValue: clipboardValue,
+        value: tab.value
+      };
+
+      const activeIndex = tabs.findIndex((item) => item.id === activeId);
+      const insertIndex = activeIndex === -1 ? tabs.length : activeIndex + 1;
+      tabs = [
+        ...tabs.slice(0, insertIndex),
+        diffTab,
+        ...tabs.slice(insertIndex)
+      ];
+      activeId = id;
+      outputValue = clipboardValue;
+      status = { kind: "ok", message: t("diffCreated") };
+    } catch (error) {
+      status = { kind: "error", message: t("clipboardReadFailed", { error: (error as Error).message }) };
     }
   }
 
@@ -1069,6 +1216,45 @@
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
   }
 
+  .diff-only {
+    flex: 1 1 100%;
+  }
+
+  .diff-shell {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .diff-funnel {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 28px;
+    height: calc(100% - 20px);
+    pointer-events: none;
+    border-radius: 999px;
+    border: 1px solid rgba(130, 158, 201, 0.45);
+    background: linear-gradient(180deg, rgba(95, 133, 193, 0.2), rgba(95, 133, 193, 0.08));
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+    display: flex;
+    justify-content: center;
+  }
+
+  .diff-funnel-icon {
+    margin-top: 8px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(62, 94, 151, 0.85);
+    color: #f4f8ff;
+    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .hint {
     margin-left: auto;
     opacity: 0.72;
@@ -1170,10 +1356,11 @@
       <button on:click={runValidate} disabled={!supportsActions() || isProcessing}><span class="button-icon" aria-hidden="true">✅</span>{t("actionValidate")}</button>
       <button on:click={undoActiveTab} disabled={!canUndoActive() || isProcessing} aria-label={t("actionUndo")} title={t("actionUndo")}><span class="button-icon" aria-hidden="true">↶</span></button>
       <button on:click={redoActiveTab} disabled={!canRedoActive() || isProcessing} aria-label={t("actionRedo")} title={t("actionRedo")}><span class="button-icon" aria-hidden="true">↷</span></button>
-      <button on:click={clearActiveTab} disabled={!active().value}><span class="button-icon" aria-hidden="true">🧹</span>{t("actionClearEditor")}</button>
+      <button on:click={clearActiveTab} disabled={active().kind !== "editor" || !active().value}><span class="button-icon" aria-hidden="true">🧹</span>{t("actionClearEditor")}</button>
       <button on:click={runCompress} disabled={!outputValue || isProcessing}><span class="button-icon" aria-hidden="true">🗜</span>{t("actionCompressOutput")}</button>
       <button on:click={copyOutputToEditor} disabled={!outputValue}><span class="button-icon" aria-hidden="true">⤴</span>{t("actionOutputToEditor")}</button>
       <button on:click={copyOutputToClipboard} disabled={!outputValue}><span class="button-icon" aria-hidden="true">📋</span>{t("actionCopyOutput")}</button>
+      <button on:click={compareWithClipboard} disabled={active().kind !== "editor" || isProcessing}><span class="button-icon" aria-hidden="true">🆚</span>{t("actionCompareClipboard")}</button>
       <div class="hint">{t("dragAndDropHint")}</div>
     </div>
 
@@ -1181,7 +1368,7 @@
       {#each tabs as tab (tab.id)}
         <div
           class="tab {tab.id === activeId ? 'active' : ''}"
-          title={tab.path ?? ""}
+          title={tab.kind === "editor" ? tab.path ?? "" : ""}
           role="tab"
           aria-selected={tab.id === activeId}
           tabindex="0"
@@ -1196,7 +1383,7 @@
           >
             <span aria-hidden="true">✕</span>
           </button>
-          <span class="tab-title">{tab.title}{tab.dirty ? " *" : ""}</span>
+          <span class="tab-title">{tab.title}{tab.kind === "editor" && tab.dirty ? " *" : ""}</span>
         </div>
       {/each}
       <button
@@ -1210,28 +1397,52 @@
       </button>
     </div>
 
-    <div class="sidebyside">
-      <div
-        class="editor"
-        role="region"
-        aria-label={t("editorRegionLabel")}
-      >
-        <MonacoEditor
-          value={active().value}
-          language={active().lang}
-          errorPosition={errorPosition}
-          onChange={setActiveValue}
-          onDropFile={handleLocalFileDrop}
-        />
+    {#if active().kind === "diff"}
+      <div class="sidebyside">
+        <div
+          class="editor diff-only"
+          role="region"
+          aria-label={t("editorRegionLabel")}
+        >
+          <div class="diff-shell">
+            <div class="diff-funnel" aria-hidden="true">
+              <span class="diff-funnel-icon">⏷</span>
+            </div>
+            <MonacoEditor
+              mode="diff"
+              value={(active() as DiffTab).originalValue}
+              originalValue={active().value}
+              language={active().lang}
+              readonly={false}
+              onChange={setActiveDiffValue}
+            />
+          </div>
+        </div>
       </div>
-      <div class="output">
-        <MonacoEditor
-          value={outputValue}
-          language={active().lang}
-          readonly={true}
-        />
+    {:else}
+      <div class="sidebyside">
+        <div
+          class="editor"
+          role="region"
+          aria-label={t("editorRegionLabel")}
+        >
+          <MonacoEditor
+            value={active().value}
+            language={active().lang}
+            errorPosition={errorPosition}
+            onChange={setActiveValue}
+            onDropFile={handleLocalFileDrop}
+          />
+        </div>
+        <div class="output">
+          <MonacoEditor
+            value={outputValue}
+            language={active().lang}
+            readonly={true}
+          />
+        </div>
       </div>
-    </div>
+    {/if}
     <div class="footer">
       <div class="status {status.kind}">{status.message}</div>
     </div>

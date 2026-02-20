@@ -5,18 +5,24 @@
   let monaco: typeof Monaco;
 
   export let value: string = "";
+  export let originalValue: string = "";
   export let language: "json" | "xml" | "plaintext" = "json";
   export let errorPosition: { line: number; column: number } | null = null;
   export let onChange: (v: string) => void = () => {};
   export let onDropFile: ((event: DragEvent) => void) | null = null;
   export let readonly = false;
+  export let mode: "code" | "diff" = "code";
 
   let el: HTMLDivElement;
   let editor: Monaco.editor.IStandaloneCodeEditor | null = null;
+  let diffEditor: Monaco.editor.IStandaloneDiffEditor | null = null;
+  let diffOriginalModel: Monaco.editor.ITextModel | null = null;
+  let diffModifiedModel: Monaco.editor.ITextModel | null = null;
   let errorDecorations: string[] = [];
 
   onMount(() => {
     let sub: Monaco.IDisposable | null = null;
+    let diffSub: Monaco.IDisposable | null = null;
 
     const handleDrop = (event: DragEvent) => {
       if (!onDropFile) {
@@ -54,19 +60,39 @@
         }
       };
 
-      editor = monaco.editor.create(el, {
-        value,
-        language,
-        automaticLayout: true,
-        minimap: { enabled: false },
-        wordWrap: "on",
-        fontSize: 14,
-        readOnly: readonly,
-      });
+      if (mode === "diff") {
+        diffEditor = monaco.editor.createDiffEditor(el, {
+          automaticLayout: true,
+          minimap: { enabled: false },
+          wordWrap: "on",
+          fontSize: 14,
+          readOnly: true,
+          originalEditable: !readonly,
+          renderSideBySide: true
+        });
 
-      sub = editor.onDidChangeModelContent(() => {
-        onChange(editor!.getValue());
-      });
+        diffOriginalModel = monaco.editor.createModel(originalValue, language);
+        diffModifiedModel = monaco.editor.createModel(value, language);
+        diffEditor.setModel({ original: diffOriginalModel, modified: diffModifiedModel });
+
+        diffSub = diffEditor.getOriginalEditor().onDidChangeModelContent(() => {
+          onChange(diffEditor!.getOriginalEditor().getValue());
+        });
+      } else {
+        editor = monaco.editor.create(el, {
+          value,
+          language,
+          automaticLayout: true,
+          minimap: { enabled: false },
+          wordWrap: "on",
+          fontSize: 14,
+          readOnly: readonly
+        });
+
+        sub = editor.onDidChangeModelContent(() => {
+          onChange(editor!.getValue());
+        });
+      }
 
       el.addEventListener("dragover", handleDragOver, true);
       el.addEventListener("drop", handleDrop, true);
@@ -76,9 +102,13 @@
 
     return () => {
       sub?.dispose();
+      diffSub?.dispose();
+      diffOriginalModel?.dispose();
+      diffModifiedModel?.dispose();
       el.removeEventListener("dragover", handleDragOver, true);
       el.removeEventListener("drop", handleDrop, true);
       editor?.dispose();
+      diffEditor?.dispose();
     };
   });
 
@@ -87,6 +117,19 @@
     if (model && model.getValue() !== value) editor.setValue(value);
     if (model) monaco.editor.setModelLanguage(model, language);
     editor.updateOptions({ readOnly: readonly });
+  }
+
+  $: if (diffEditor && diffOriginalModel && diffModifiedModel) {
+    if (diffOriginalModel.getValue() !== originalValue) {
+      diffOriginalModel.setValue(originalValue);
+    }
+    if (diffModifiedModel.getValue() !== value) {
+      diffModifiedModel.setValue(value);
+    }
+
+    monaco.editor.setModelLanguage(diffOriginalModel, language);
+    monaco.editor.setModelLanguage(diffModifiedModel, language);
+    diffEditor.updateOptions({ readOnly: true, originalEditable: !readonly });
   }
 
   $: if (editor && monaco) {
