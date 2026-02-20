@@ -994,6 +994,8 @@
       return;
     }
 
+    const comparisonValue = outputValue || tab.value;
+
     try {
       let clipboardValue = "";
       let read = false;
@@ -1024,7 +1026,7 @@
         sourceEditorId: tab.id,
         title: t("diffTabTitle", { name: tab.title }),
         lang: tab.lang,
-        originalValue: tab.value,
+        originalValue: comparisonValue,
         value: clipboardValue
       };
 
@@ -1036,7 +1038,7 @@
         ...tabs.slice(insertIndex)
       ];
       activeId = id;
-      outputValue = tab.value;
+      outputValue = comparisonValue;
       status = { kind: "ok", message: t("diffCreated") };
     } catch (error) {
       status = { kind: "error", message: t("clipboardReadFailed", { error: (error as Error).message }) };
