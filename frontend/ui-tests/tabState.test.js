@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { getActiveEditorTab, getActiveTab, getSourceEditorTabForDiff } from "../.tmp-tests/tabState.js";
+import { getActionEditorTab, getActiveEditorTab, getActiveTab, getSourceEditorTabForDiff } from "../.tmp-tests/tabState.js";
 
 const editorA = {
   id: "editor-a",
@@ -61,4 +61,23 @@ test("getSourceEditorTabForDiff returns the editor linked from the diff tab", ()
 
   assert.ok(source);
   assert.equal(source.id, "editor-b");
+});
+
+
+test("getActionEditorTab returns source editor when diff tab is active", () => {
+  const diff = {
+    id: "diff-2",
+    kind: "diff",
+    sourceEditorId: "editor-a",
+    title: "Diff",
+    lang: "json",
+    originalValue: "{}",
+    value: "{\"y\":2}"
+  };
+
+  const tabs = [editorA, editorB, diff];
+  const source = getActionEditorTab(tabs, "diff-2");
+
+  assert.ok(source);
+  assert.equal(source.id, "editor-a");
 });

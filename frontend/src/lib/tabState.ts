@@ -40,3 +40,8 @@ export function getSourceEditorTabForDiff(tabs: Tab[], activeId: string): Editor
   const sourceTab = tabs.find((candidate) => candidate.id === tab.sourceEditorId);
   return sourceTab && sourceTab.kind === "editor" ? sourceTab : null;
 }
+
+
+export function getActionEditorTab(tabs: Tab[], activeId: string): EditorTab | null {
+  return getActiveEditorTab(tabs, activeId) ?? getSourceEditorTabForDiff(tabs, activeId);
+}

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import MonacoEditor from "./lib/MonacoEditor.svelte";
-  import { getActiveEditorTab, getActiveTab, getSourceEditorTabForDiff } from "./lib/tabState";
+  import { getActionEditorTab, getActiveEditorTab, getActiveTab, getSourceEditorTabForDiff } from "./lib/tabState";
   import type { DiffTab, EditorTab, Tab } from "./lib/tabState";
   import { ClipboardGetText, ClipboardSetText, EventsOn, OnFileDrop } from "../wailsjs/runtime/runtime";
   import {
@@ -505,20 +505,18 @@
   const active = () => getActiveTab(tabs, activeId);
   const activeEditor = (): EditorTab | null => getActiveEditorTab(tabs, activeId);
   const sourceEditorForDiff = (): EditorTab | null => getSourceEditorTabForDiff(tabs, activeId);
+  const actionEditor = (): EditorTab | null => getActionEditorTab(tabs, activeId);
 
-  function setActiveValue(v: string, options: { recordUndo?: boolean } = {}) {
+
+  function setEditorValue(editorId: string, v: string, options: { recordUndo?: boolean } = {}) {
     const { recordUndo = true } = options;
-    const index = tabs.findIndex((t) => t.id === activeId);
+    const index = tabs.findIndex((t) => t.id === editorId);
     if (index === -1) {
       return;
     }
 
     const current = tabs[index];
-    if (current.kind !== "editor") {
-      return;
-    }
-
-    if (current.value === v) {
+    if (current.kind !== "editor" || current.value === v) {
       return;
     }
 
@@ -533,6 +531,15 @@
       },
       ...tabs.slice(index + 1)
     ];
+  }
+
+  function setActiveValue(v: string, options: { recordUndo?: boolean } = {}) {
+    const tab = activeEditor();
+    if (!tab) {
+      return;
+    }
+
+    setEditorValue(tab.id, v, options);
   }
 
   function setActiveDiffValue(v: string) {
@@ -553,8 +560,8 @@
     ];
   }
 
-  function setActiveTab(tab: Partial<EditorTab>) {
-    const index = tabs.findIndex((t) => t.id === activeId);
+  function setEditorTab(editorId: string, tab: Partial<EditorTab>) {
+    const index = tabs.findIndex((t) => t.id === editorId);
     if (index === -1) {
       return;
     }
@@ -648,7 +655,7 @@
   }
 
   async function saveActiveFile() {
-    const tab = activeEditor();
+    const tab = actionEditor();
     if (!tab) {
       return;
     }
@@ -664,12 +671,12 @@
       return;
     }
 
-    setActiveTab({ path: savedPath, title: getBaseName(savedPath), dirty: false });
+    setEditorTab(tab.id, { path: savedPath, title: getBaseName(savedPath), dirty: false });
     status = { kind: "ok", message: t("savedFile", { name: getBaseName(savedPath) }) };
   }
 
   async function saveActiveFileAs() {
-    const tab = activeEditor();
+    const tab = actionEditor();
     if (!tab) {
       return;
     }
@@ -679,7 +686,7 @@
       return;
     }
 
-    setActiveTab({ path: savedPath, title: getBaseName(savedPath), dirty: false });
+    setEditorTab(tab.id, { path: savedPath, title: getBaseName(savedPath), dirty: false });
     status = { kind: "ok", message: t("savedFile", { name: getBaseName(savedPath) }) };
   }
 
@@ -709,7 +716,7 @@
   }
 
   function supportsActions() {
-    const tab = activeEditor();
+    const tab = actionEditor();
     return !!tab && (tab.lang === "json" || tab.lang === "xml");
   }
 
@@ -737,7 +744,7 @@
   }
 
   async function runValidate() {
-    const tab = activeEditor();
+    const tab = actionEditor();
     if (!tab) {
       return;
     }
@@ -773,7 +780,7 @@
   }
 
   async function runFormat() {
-    const tab = activeEditor();
+    const tab = actionEditor();
     if (!tab) {
       return;
     }
@@ -807,7 +814,7 @@
       if (formatting.ok && formatting.output !== undefined) {
         outputValue = formatting.output;
         errorPosition = null;
-        setActiveValue(formatting.output);
+        setEditorValue(tab.id, formatting.output);
       } else {
         outputValue = "";
         errorPosition = formatting.line
@@ -822,86 +829,81 @@
   }
 
   function copyOutputToEditor() {
-    const tab = activeEditor();
+    const tab = actionEditor();
     if (!outputValue || !tab) {
       return;
     }
 
-    setActiveValue(outputValue);
+    setEditorValue(tab.id, outputValue);
   }
 
   function canUndoActive(): boolean {
-    const tab = activeEditor();
+    const tab = actionEditor();
     return !!tab && tab.undoHistory.length > 0;
   }
 
   function canRedoActive(): boolean {
-    const tab = activeEditor();
+    const tab = actionEditor();
     return !!tab && tab.redoHistory.length > 0;
   }
 
   function undoActiveTab() {
-    const index = tabs.findIndex((t) => t.id === activeId);
+    const tab = actionEditor();
+    if (!tab || tab.undoHistory.length === 0) {
+      return;
+    }
+
+    const previousValue = tab.undoHistory[tab.undoHistory.length - 1];
+    const index = tabs.findIndex((t) => t.id === tab.id);
     if (index === -1) {
       return;
     }
 
-    const current = tabs[index];
-    if (current.kind !== "editor") {
-      return;
-    }
-    if (current.undoHistory.length === 0) {
-      return;
-    }
-
-    const previousValue = current.undoHistory[current.undoHistory.length - 1];
     tabs = [
       ...tabs.slice(0, index),
       {
-        ...current,
+        ...tab,
         value: previousValue,
         dirty: true,
-        undoHistory: current.undoHistory.slice(0, -1),
-        redoHistory: [...current.redoHistory, current.value].slice(-200)
+        undoHistory: tab.undoHistory.slice(0, -1),
+        redoHistory: [...tab.redoHistory, tab.value].slice(-200)
       },
       ...tabs.slice(index + 1)
     ];
   }
 
   function redoActiveTab() {
-    const index = tabs.findIndex((t) => t.id === activeId);
+    const tab = actionEditor();
+    if (!tab || tab.redoHistory.length === 0) {
+      return;
+    }
+
+    const nextValue = tab.redoHistory[tab.redoHistory.length - 1];
+    const index = tabs.findIndex((t) => t.id === tab.id);
     if (index === -1) {
       return;
     }
 
-    const current = tabs[index];
-    if (current.kind !== "editor") {
-      return;
-    }
-    if (current.redoHistory.length === 0) {
-      return;
-    }
-
-    const nextValue = current.redoHistory[current.redoHistory.length - 1];
     tabs = [
       ...tabs.slice(0, index),
       {
-        ...current,
+        ...tab,
         value: nextValue,
         dirty: true,
-        undoHistory: [...current.undoHistory, current.value].slice(-200),
-        redoHistory: current.redoHistory.slice(0, -1)
+        undoHistory: [...tab.undoHistory, tab.value].slice(-200),
+        redoHistory: tab.redoHistory.slice(0, -1)
       },
       ...tabs.slice(index + 1)
     ];
   }
 
   function clearActiveTab() {
-    if (!activeEditor()) {
+    const tab = actionEditor();
+    if (!tab) {
       return;
     }
 
-    setActiveValue("");
+    setEditorValue(tab.id, "");
     errorPosition = null;
   }
 
@@ -923,7 +925,7 @@
     }
 
     try {
-      const lang = activeEditor()?.lang ?? active().lang;
+      const lang = actionEditor()?.lang ?? active().lang;
       if (lang === "json") {
         outputValue = compressJsonContent(outputValue);
       } else if (lang === "xml") {
@@ -946,11 +948,23 @@
     }
 
     try {
+      let copied = false;
+
       if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(outputValue);
-      } else if (typeof ClipboardSetText === "function") {
+        try {
+          await navigator.clipboard.writeText(outputValue);
+          copied = true;
+        } catch {
+          copied = false;
+        }
+      }
+
+      if (!copied && typeof ClipboardSetText === "function") {
         await ClipboardSetText(outputValue);
-      } else {
+        copied = true;
+      }
+
+      if (!copied) {
         const helper = document.createElement("textarea");
         helper.value = outputValue;
         helper.setAttribute("readonly", "true");
@@ -959,8 +973,12 @@
         document.body.appendChild(helper);
         helper.focus();
         helper.select();
-        document.execCommand("copy");
+        copied = document.execCommand("copy");
         document.body.removeChild(helper);
+      }
+
+      if (!copied) {
+        throw new Error("Clipboard copy is unavailable.");
       }
 
       status = { kind: "ok", message: t("outputCopied") };
@@ -971,18 +989,30 @@
 
 
   async function compareWithClipboard() {
-    const tab = activeEditor();
+    const tab = actionEditor();
     if (!tab) {
       return;
     }
 
     try {
       let clipboardValue = "";
+      let read = false;
+
       if (navigator.clipboard?.readText) {
-        clipboardValue = await navigator.clipboard.readText();
-      } else if (typeof ClipboardGetText === "function") {
+        try {
+          clipboardValue = await navigator.clipboard.readText();
+          read = true;
+        } catch {
+          read = false;
+        }
+      }
+
+      if (!read && typeof ClipboardGetText === "function") {
         clipboardValue = await ClipboardGetText();
-      } else {
+        read = true;
+      }
+
+      if (!read) {
         status = { kind: "error", message: t("clipboardUnavailable") };
         return;
       }
@@ -1029,7 +1059,12 @@
     }
 
     const content = await file.text();
-    setActiveTab({
+    const targetTab = actionEditor();
+    if (!targetTab) {
+      return;
+    }
+
+    setEditorTab(targetTab.id, {
       title: file.name,
       path: undefined,
       lang,
@@ -1536,15 +1571,15 @@
 
 <div class="root platform-{appPlatform} theme-{effectiveTheme}">
   <div class="toolbar">
-      <button on:click={runFormat} disabled={!supportsActions() || isProcessing || !activeEditor()}><span class="button-icon" aria-hidden="true">✨</span>{t("actionFormatApply")}</button>
-      <button on:click={runValidate} disabled={!supportsActions() || isProcessing || !activeEditor()}><span class="button-icon" aria-hidden="true">✅</span>{t("actionValidate")}</button>
-      <button on:click={undoActiveTab} disabled={!canUndoActive() || isProcessing || !activeEditor()} aria-label={t("actionUndo")} title={t("actionUndo")}><span class="button-icon" aria-hidden="true">↶</span></button>
-      <button on:click={redoActiveTab} disabled={!canRedoActive() || isProcessing || !activeEditor()} aria-label={t("actionRedo")} title={t("actionRedo")}><span class="button-icon" aria-hidden="true">↷</span></button>
-      <button on:click={clearActiveTab} disabled={!activeEditor() || !activeEditor()?.value || isProcessing}><span class="button-icon" aria-hidden="true">🧹</span>{t("actionClearEditor")}</button>
+      <button on:click={runFormat} disabled={!supportsActions() || isProcessing || !actionEditor()}><span class="button-icon" aria-hidden="true">✨</span>{t("actionFormatApply")}</button>
+      <button on:click={runValidate} disabled={!supportsActions() || isProcessing || !actionEditor()}><span class="button-icon" aria-hidden="true">✅</span>{t("actionValidate")}</button>
+      <button on:click={undoActiveTab} disabled={!canUndoActive() || isProcessing || !actionEditor()} aria-label={t("actionUndo")} title={t("actionUndo")}><span class="button-icon" aria-hidden="true">↶</span></button>
+      <button on:click={redoActiveTab} disabled={!canRedoActive() || isProcessing || !actionEditor()} aria-label={t("actionRedo")} title={t("actionRedo")}><span class="button-icon" aria-hidden="true">↷</span></button>
+      <button on:click={clearActiveTab} disabled={!actionEditor() || !actionEditor()?.value || isProcessing}><span class="button-icon" aria-hidden="true">🧹</span>{t("actionClearEditor")}</button>
       <button on:click={runCompress} disabled={!outputValue || isProcessing}><span class="button-icon" aria-hidden="true">🗜</span>{t("actionCompressOutput")}</button>
-      <button on:click={copyOutputToEditor} disabled={!outputValue || !activeEditor()}><span class="button-icon" aria-hidden="true">⤴</span>{t("actionOutputToEditor")}</button>
-      <button on:click={copyOutputToClipboard} disabled={!outputValue || !activeEditor()}><span class="button-icon" aria-hidden="true">📋</span>{t("actionCopyOutput")}</button>
-      <button on:click={compareWithClipboard} disabled={!activeEditor() || isProcessing}><span class="button-icon" aria-hidden="true">🆚</span>{t("actionCompareClipboard")}</button>
+      <button on:click={copyOutputToEditor} disabled={!outputValue || !actionEditor()}><span class="button-icon" aria-hidden="true">⤴</span>{t("actionOutputToEditor")}</button>
+      <button on:click={copyOutputToClipboard} disabled={!outputValue || !actionEditor()}><span class="button-icon" aria-hidden="true">📋</span>{t("actionCopyOutput")}</button>
+      <button on:click={compareWithClipboard} disabled={!actionEditor() || isProcessing}><span class="button-icon" aria-hidden="true">🆚</span>{t("actionCompareClipboard")}</button>
       <div class="hint">{t("dragAndDropHint")}</div>
     </div>
 
