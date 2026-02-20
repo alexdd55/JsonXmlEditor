@@ -23,6 +23,7 @@
   onMount(() => {
     let sub: Monaco.IDisposable | null = null;
     let diffSub: Monaco.IDisposable | null = null;
+    let destroyed = false;
 
     const handleDrop = (event: DragEvent) => {
       if (!onDropFile) {
@@ -44,63 +45,82 @@
     };
 
     const initEditor = async () => {
-      const monacoModule = await import("monaco-editor");
-      monaco = monacoModule.default || monacoModule;
-
-      // Configure worker paths per language service.
-      const editorWorker = await import("monaco-editor/esm/vs/editor/editor.worker?worker");
-      const jsonWorker = await import("monaco-editor/esm/vs/language/json/json.worker?worker");
-      window.MonacoEnvironment = {
-        getWorker: (_moduleId: string, label: string) => {
-          if (label === "json") {
-            return new jsonWorker.default();
-          }
-
-          return new editorWorker.default();
+      try {
+        const monacoModule = await import("monaco-editor");
+        if (destroyed) {
+          return;
         }
-      };
+        monaco = monacoModule.default || monacoModule;
 
-      if (mode === "diff") {
-        diffEditor = monaco.editor.createDiffEditor(el, {
-          automaticLayout: true,
-          minimap: { enabled: false },
-          wordWrap: "on",
-          fontSize: 14,
-          readOnly: readonly,
-          originalEditable: !readonly,
-          renderSideBySide: true
-        });
+        // Configure worker paths per language service.
+        const editorWorker = await import("monaco-editor/esm/vs/editor/editor.worker?worker");
+        const jsonWorker = await import("monaco-editor/esm/vs/language/json/json.worker?worker");
+        if (destroyed) {
+          return;
+        }
+        window.MonacoEnvironment = {
+          getWorker: (_moduleId: string, label: string) => {
+            if (label === "json") {
+              return new jsonWorker.default();
+            }
 
-        diffOriginalModel = monaco.editor.createModel(originalValue, language);
-        diffModifiedModel = monaco.editor.createModel(value, language);
-        diffEditor.setModel({ original: diffOriginalModel, modified: diffModifiedModel });
+            return new editorWorker.default();
+          }
+        };
 
-        diffSub = diffEditor.getModifiedEditor().onDidChangeModelContent(() => {
-          onChange(diffEditor!.getModifiedEditor().getValue());
-        });
-      } else {
-        editor = monaco.editor.create(el, {
-          value,
-          language,
-          automaticLayout: true,
-          minimap: { enabled: false },
-          wordWrap: "on",
-          fontSize: 14,
-          readOnly: readonly
-        });
+        if (mode === "diff") {
+          diffEditor = monaco.editor.createDiffEditor(el, {
+            automaticLayout: true,
+            minimap: { enabled: false },
+            wordWrap: "on",
+            fontSize: 14,
+            readOnly: readonly,
+            originalEditable: !readonly,
+            renderSideBySide: true
+          });
 
-        sub = editor.onDidChangeModelContent(() => {
-          onChange(editor!.getValue());
-        });
+          diffOriginalModel = monaco.editor.createModel(originalValue, language);
+          diffModifiedModel = monaco.editor.createModel(value, language);
+          diffEditor.setModel({ original: diffOriginalModel, modified: diffModifiedModel });
+
+          diffSub = diffEditor.getModifiedEditor().onDidChangeModelContent(() => {
+            onChange(diffEditor!.getModifiedEditor().getValue());
+          });
+        } else {
+          editor = monaco.editor.create(el, {
+            value,
+            language,
+            automaticLayout: true,
+            minimap: { enabled: false },
+            wordWrap: "on",
+            fontSize: 14,
+            readOnly: readonly
+          });
+
+          sub = editor.onDidChangeModelContent(() => {
+            onChange(editor!.getValue());
+          });
+        }
+
+        if (destroyed) {
+          editor?.dispose();
+          diffEditor?.dispose();
+          diffOriginalModel?.dispose();
+          diffModifiedModel?.dispose();
+          return;
+        }
+
+        el.addEventListener("dragover", handleDragOver, true);
+        el.addEventListener("drop", handleDrop, true);
+      } catch (error) {
+        console.error("Failed to initialize Monaco editor:", error);
       }
-
-      el.addEventListener("dragover", handleDragOver, true);
-      el.addEventListener("drop", handleDrop, true);
     };
 
     void initEditor();
 
     return () => {
+      destroyed = true;
       sub?.dispose();
       diffSub?.dispose();
       diffOriginalModel?.dispose();

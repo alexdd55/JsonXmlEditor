@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "lint": "svelte-check --tsconfig ./tsconfig.json",
+    "test": "npm run test:ui",
     "test:ui": "rm -rf .tmp-tests && npx tsc --target ES2022 --module NodeNext --moduleResolution NodeNext --outDir .tmp-tests src/lib/tabState.ts && node --test ui-tests/tabState.test.js"
   },
   "devDependencies": {
