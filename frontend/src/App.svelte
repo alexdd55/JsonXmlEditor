@@ -449,6 +449,24 @@
     ];
   }
 
+  function setActiveDiffValue(v: string) {
+    const index = tabs.findIndex((t) => t.id === activeId);
+    if (index === -1) {
+      return;
+    }
+
+    const current = tabs[index];
+    if (current.kind !== "diff" || current.value === v) {
+      return;
+    }
+
+    tabs = [
+      ...tabs.slice(0, index),
+      { ...current, value: v },
+      ...tabs.slice(index + 1)
+    ];
+  }
+
   function setActiveTab(tab: Partial<EditorTab>) {
     const index = tabs.findIndex((t) => t.id === activeId);
     if (index === -1) {
@@ -895,6 +913,7 @@
         ...tabs.slice(insertIndex)
       ];
       activeId = id;
+      outputValue = clipboardValue;
       status = { kind: "ok", message: t("diffCreated") };
     } catch (error) {
       status = { kind: "error", message: t("clipboardReadFailed", { error: (error as Error).message }) };
@@ -1201,6 +1220,41 @@
     flex: 1 1 100%;
   }
 
+  .diff-shell {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .diff-funnel {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 28px;
+    height: calc(100% - 20px);
+    pointer-events: none;
+    border-radius: 999px;
+    border: 1px solid rgba(130, 158, 201, 0.45);
+    background: linear-gradient(180deg, rgba(95, 133, 193, 0.2), rgba(95, 133, 193, 0.08));
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+    display: flex;
+    justify-content: center;
+  }
+
+  .diff-funnel-icon {
+    margin-top: 8px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(62, 94, 151, 0.85);
+    color: #f4f8ff;
+    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .hint {
     margin-left: auto;
     opacity: 0.72;
@@ -1350,13 +1404,19 @@
           role="region"
           aria-label={t("editorRegionLabel")}
         >
-          <MonacoEditor
-            mode="diff"
-            value={active().value}
-            originalValue={(active() as DiffTab).originalValue}
-            language={active().lang}
-            readonly={true}
-          />
+          <div class="diff-shell">
+            <div class="diff-funnel" aria-hidden="true">
+              <span class="diff-funnel-icon">⏷</span>
+            </div>
+            <MonacoEditor
+              mode="diff"
+              value={active().value}
+              originalValue={(active() as DiffTab).originalValue}
+              language={active().lang}
+              readonly={false}
+              onChange={setActiveDiffValue}
+            />
+          </div>
         </div>
       </div>
     {:else}

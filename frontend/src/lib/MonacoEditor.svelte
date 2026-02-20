@@ -22,6 +22,7 @@
 
   onMount(() => {
     let sub: Monaco.IDisposable | null = null;
+    let diffSub: Monaco.IDisposable | null = null;
 
     const handleDrop = (event: DragEvent) => {
       if (!onDropFile) {
@@ -65,13 +66,17 @@
           minimap: { enabled: false },
           wordWrap: "on",
           fontSize: 14,
-          readOnly: true,
+          readOnly: readonly,
           renderSideBySide: true
         });
 
         diffOriginalModel = monaco.editor.createModel(originalValue, language);
         diffModifiedModel = monaco.editor.createModel(value, language);
         diffEditor.setModel({ original: diffOriginalModel, modified: diffModifiedModel });
+
+        diffSub = diffEditor.getModifiedEditor().onDidChangeModelContent(() => {
+          onChange(diffEditor!.getModifiedEditor().getValue());
+        });
       } else {
         editor = monaco.editor.create(el, {
           value,
@@ -96,6 +101,7 @@
 
     return () => {
       sub?.dispose();
+      diffSub?.dispose();
       diffOriginalModel?.dispose();
       diffModifiedModel?.dispose();
       el.removeEventListener("dragover", handleDragOver, true);
@@ -122,6 +128,7 @@
 
     monaco.editor.setModelLanguage(diffOriginalModel, language);
     monaco.editor.setModelLanguage(diffModifiedModel, language);
+    diffEditor.updateOptions({ readOnly: readonly });
   }
 
   $: if (editor && monaco) {
